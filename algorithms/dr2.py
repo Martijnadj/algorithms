@@ -48,7 +48,8 @@ class DR2(Algorithm):
             for gen in range(int(nr_of_previous_gen)):
                 z_prime = np.zeros((n, 1))
                 Y = np.zeros((n, 1))
-                sel = (self.old_data_file[(self.old_data_file['generation'] == (gen + 1)) & (self.old_data_file['chosen'] == True)].index).tolist()[0]
+                sel = gen*self.lambda_ + self.old_data_file[self.old_data_file['generation'] == 1]['fitness'].idxmin()
+                #change to idxmax to maximize fitness instead
                 X = self.old_data_file.iloc[sel, num_columns-n:]
                 X = X.to_numpy().reshape((3, 1))
                 Y = X - x_prime
@@ -66,7 +67,6 @@ class DR2(Algorithm):
                 sigma_factor = np.power((np.abs(zeta) / c1) + (7 / 20), beta_scale)
                 sigma_local = sigma_local * sigma_factor
                 sigma_local = sigma_local.clip(0, SIGMA_MAX)
-                print('sigma_local after old_data = ' + str(sigma_local))
 
         try:
             while not self.should_terminate(problem, self.lambda_):
@@ -102,7 +102,6 @@ class DR2(Algorithm):
                         f"sigma: {sigma:.3e}",
                         f"sigma_local: {np.median(sigma_local):.3e} +- {np.std(sigma_local):.3f};",
                     )
-                print('sigma_local at end = ' + str(sigma_local))
         except KeyboardInterrupt:
             pass
         return x_prime
