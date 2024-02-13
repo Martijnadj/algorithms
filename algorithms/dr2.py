@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import ioh
+import pandas as pd
 
 from .algorithm import Algorithm, SolutionType, DEFAULT_MAX_BUDGET, SIGMA_MAX
 from .utils import Weights, init_lambda
@@ -11,12 +12,15 @@ from .utils import Weights, init_lambda
 class DR2(Algorithm):
     budget: int = DEFAULT_MAX_BUDGET
     mu: int = 1
-    lambda_: int = 10
+    lambda_: int = 2
     sigma0: float = 1
     verbose: bool = True
     mirrored: bool = True
+    use_old_data: bool = False
+    old_data_file: pd.DataFrame = pd.DataFrame()
 
     def __call__(self, problem: ioh.ProblemType) -> SolutionType:
+
         n = problem.meta_data.n_variables
         self.lambda_ = self.lambda_ or init_lambda(n, "default")
         self.mu = self.mu or self.lambda_ // 2
@@ -36,6 +40,33 @@ class DR2(Algorithm):
         weights = Weights(self.mu, self.lambda_, n)
         x_prime = np.zeros((n, 1))
         n_samples = self.lambda_ if not self.mirrored else self.lambda_ // 2
+
+        
+        if self.use_old_data == True:
+            num_columns = self.old_data_file.shape[1]
+            nr_of_previous_gen = self.old_data_file['generation'][:].max()
+            for gen in range(int(nr_of_previous_gen)):
+                z_prime = np.zeros((n, 1))
+                Y = np.zeros((n, 1))
+                sel = (self.old_data_file[(self.old_data_file['generation'] == (gen + 1)) & (self.old_data_file['chosen'] == True)].index).tolist()[0]
+                X = self.old_data_file.iloc[sel, num_columns-n:]
+                X = X.to_numpy().reshape((3, 1))
+                Y = X - x_prime
+                Z = Y / (sigma * sigma_local)
+                x_prime = X
+                z_prime = Z*weights.w
+                z_prime *= np.sqrt(weights.mueff)
+
+                zeta = ((1 - c) * zeta) + (c * z_prime)
+                sigma = min(
+                    sigma
+                    * np.power(np.exp((np.linalg.norm(zeta) / c2) - 1 + c3), beta),
+                    SIGMA_MAX,
+                )
+                sigma_factor = np.power((np.abs(zeta) / c1) + (7 / 20), beta_scale)
+                sigma_local = sigma_local * sigma_factor
+                sigma_local = sigma_local.clip(0, SIGMA_MAX)
+                print('sigma_local after old_data = ' + str(sigma_local))
 
         try:
             while not self.should_terminate(problem, self.lambda_):
@@ -71,6 +102,7 @@ class DR2(Algorithm):
                         f"sigma: {sigma:.3e}",
                         f"sigma_local: {np.median(sigma_local):.3e} +- {np.std(sigma_local):.3f};",
                     )
+                print('sigma_local at end = ' + str(sigma_local))
         except KeyboardInterrupt:
             pass
         return x_prime
