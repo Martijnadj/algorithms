@@ -12,7 +12,7 @@ from .utils import Weights, init_lambda
 class DR2(Algorithm):
     budget: int = DEFAULT_MAX_BUDGET
     mu: int = 1
-    lambda_: int = 2
+    lambda_: int = 10
     sigma0: float = 1
     verbose: bool = True
     mirrored: bool = True
@@ -39,6 +39,14 @@ class DR2(Algorithm):
 
         weights = Weights(self.mu, self.lambda_, n)
         x_prime = np.zeros((n, 1))
+        x_prime[0,0] = 1e-6
+        x_prime[1,0] = 1e-6
+        x_prime[2,0] = 1e-6
+        x_prime[3,0] = 500
+        x_prime[4,0] = 50
+        x_prime[5,0] = 50
+        x_prime[6,0] = 50
+        sigma_local = x_prime
         n_samples = self.lambda_ if not self.mirrored else self.lambda_ // 2
 
         
