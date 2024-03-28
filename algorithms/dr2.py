@@ -52,7 +52,6 @@ class DR2(Algorithm):
         if self.use_old_data == True:
             num_columns = self.old_data_file.shape[1]
             nr_of_previous_gen = self.old_data_file['generation'][:].max()
-            nr_of_previous_gen = 4
             print(nr_of_previous_gen)
             for gen in range(int(nr_of_previous_gen)):
                 z_prime = np.zeros((n, 1))
