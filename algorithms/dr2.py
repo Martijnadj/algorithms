@@ -20,7 +20,6 @@ class DR2(Algorithm):
     old_data_file: pd.DataFrame = pd.DataFrame()
 
     def __call__(self, problem: ioh.ProblemType) -> SolutionType:
-
         n = problem.meta_data.n_variables
         self.lambda_ = self.lambda_ or init_lambda(n, "default")
         self.mu = self.mu or self.lambda_ // 2
@@ -53,13 +52,16 @@ class DR2(Algorithm):
         if self.use_old_data == True:
             num_columns = self.old_data_file.shape[1]
             nr_of_previous_gen = self.old_data_file['generation'][:].max()
+            nr_of_previous_gen = 4
+            print(nr_of_previous_gen)
             for gen in range(int(nr_of_previous_gen)):
                 z_prime = np.zeros((n, 1))
                 Y = np.zeros((n, 1))
-                sel = gen*self.lambda_ + self.old_data_file[self.old_data_file['generation'] == 1]['fitness'].idxmin()
+                sel = self.old_data_file[self.old_data_file['generation'] == gen+1]['fitness'].idxmax()
+                #change to idxmin to imnimize fitness instead
                 #change to idxmax to maximize fitness instead
                 X = self.old_data_file.iloc[sel, num_columns-n:]
-                X = X.to_numpy().reshape((3, 1))
+                X = X.to_numpy().reshape((n, 1))
                 Y = X - x_prime
                 Z = Y / (sigma * sigma_local)
                 x_prime = X
