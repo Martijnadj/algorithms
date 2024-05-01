@@ -9,6 +9,7 @@ from .gsemo import GSEMO, gsemo_onemax_zeromax
 from .dr1 import DR1
 from .dr2 import DR2
 from .dr3 import DR3
+from .cmaes import CMAES
 
 
 real = (
