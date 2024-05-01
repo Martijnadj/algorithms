@@ -18,6 +18,18 @@ class CMAES(Algorithm):
     use_old_data: bool = False
     old_data_file: pd.DataFrame = pd.DataFrame()
 
+    def inverse_scale(self, x_scaled):
+        #Convert simulation parameters to algorithm parameters for easier 
+        #Evolution strategy simulation
+        x_min = np.array([1e-9, 1e-9, 1e-9, 0, 0, 0, 0])
+        x_max = np.array([1e-5, 1e-5, 1e-5, 5000, 500, 500, 500])
+        x = x_scaled.copy()
+        
+        for i in range(len(x_scaled)):
+            for j in range(len(x_scaled[i])):
+                x[i,j] = 10 * (x_scaled[i,j] - x_min[j]) / (x_max[j] - x_min[j]) - 5
+        return x
+
     def __call__(self, problem: ioh.ProblemType) -> SolutionType:
         n = problem.meta_data.n_variables
         self.lambda_ = self.lambda_ or (4 + np.floor(3 * np.log(n))).astype(int)
@@ -64,7 +76,7 @@ class CMAES(Algorithm):
 
                 # recombine
                 m_old = m.copy()
-                X = f.iloc[:, -7:].values
+                X = self.inverse_scale(f.iloc[:, -7:].values)
                 Y = (X-m.T)/sigma
 
                 m = m_old + (1 * ((X[:self.mu, :].T - m_old) @ w).reshape(-1, 1))
@@ -141,7 +153,6 @@ class CMAES(Algorithm):
             C = old_C + rank_one + rank_mu
 
             if np.isinf(C).any() or np.isnan(C).any() or (not 0 <= sigma < 1e6):
-                print(sigma)
                 sigma = self.sigma0
                 pc = np.zeros((n, 1))
                 ps = np.zeros((n, 1))
@@ -149,7 +160,6 @@ class CMAES(Algorithm):
                 B = np.eye(n)
                 D = np.ones((n, 1))
                 invC = np.eye(n)
-                print('Instability!')
             else:
                 C = np.triu(C) + np.triu(C, 1).T
                 if not self.sep:
