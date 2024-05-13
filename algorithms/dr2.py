@@ -20,6 +20,7 @@ class DR2(Algorithm):
     old_data_file: pd.DataFrame = pd.DataFrame()
 
     def __call__(self, problem: ioh.ProblemType) -> SolutionType:
+        print("start")
         n = problem.meta_data.n_variables
         self.lambda_ = self.lambda_ or init_lambda(n, "default")
         self.mu = self.mu or self.lambda_ // 2
@@ -60,7 +61,9 @@ class DR2(Algorithm):
                 #change to idxmin to imnimize fitness instead
                 #change to idxmax to maximize fitness instead
                 X = self.old_data_file.iloc[sel, num_columns-n:]
+                print('before reshape')
                 X = X.to_numpy().reshape((n, 1))
+                print('after reshape')
                 Y = X - x_prime
                 Z = Y / (sigma * sigma_local)
                 x_prime = X
